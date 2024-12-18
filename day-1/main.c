@@ -79,7 +79,7 @@ string TryReadFileToString(const char* path, bool* success) {
     return out;
 }
 
-typedef enum {
+typedef enum e_charType {
     Unknown = 0,
     Digit = 1,
     Space = 2,
@@ -103,7 +103,7 @@ charType GetCharType(const char c) {
     }
 }
 
-void StringToIDLists(const string* string) {
+void StringToIDsLists(const string* string) {
     const int stringLength = string->length;
     const char* stringChars = string->chars;
 
@@ -139,7 +139,7 @@ void StringToIDLists(const string* string) {
         const charType charType = GetCharType(c);
         switch (charType) {
             case Digit: { // add digit to current ID
-                int out = IDsLists[IDsListSelected]->IDs[IDSelected] * 10 + (c - 0x30);
+                const int out = IDsLists[IDsListSelected]->IDs[IDSelected] * 10 + (c - 0x30);
                 IDsLists[IDsListSelected]->IDs[IDSelected] = out;
                 break;
             }
@@ -171,14 +171,22 @@ int main(int argc, char *argv[]) {
     m_printNewLine();
     if (argc > 1) {
         bool success = false;
-        fileContents = TryReadFileToString(argv[1], &success);
-        StringToIDLists(&fileContents);
-        for (int l = 0; l < IDsListCount; l++) {
-            printf("\nList: %i\n", l);
-            for (int i = 0; i < IDsLists[l]->length; ++i) {
-                printf("%i: %i, ", i, IDsLists[l]->IDs[i]);
+        fileContents = TryReadFileToString(argv[1], &success); // read file into string
+        if (success) {
+            StringToIDsLists(&fileContents); // convert string to id list
+
+
+            for (int l = 0; l < IDsListCount; l++) {
+                printf("\nList: %i\n", l);
+                for (int i = 0; i < IDsLists[l]->length; ++i) {
+                    printf("%i: %i, ", i, IDsLists[l]->IDs[i]);
+                }
+                m_printNewLine()
             }
-            m_printNewLine()
+        }
+        else {
+            printf("Bad File");
+            return -1;
         }
 
     }
