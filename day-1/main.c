@@ -41,15 +41,14 @@ typedef struct s_String {
     char* chars;
 } string;
 
-typedef struct s_List {
+typedef struct s_IDsList {
     int length;
-    int val[];
-} List;
+    int IDs[];
+} IDsList;
 
-List lists[2];
-int listCount;
+IDsList* IDsLists[];
+int IDsListCount = 1;
 
-string fileContents;
 
 string newString() {
     string out;
@@ -58,19 +57,21 @@ string newString() {
     return out;
 }
 
+string fileContents;
+
 string TryReadFileToString(const char* path, bool* success) {
     FILE* fileptr = fopen(path, "rb");
     string out = newString();
     if (fileptr) {
-        fseek(fileptr, 0, SEEK_END);
-        out.length = ftell(fileptr);
+        fseek(fileptr, 0, SEEK_END); // go to end of file
+        out.length = ftell(fileptr); // length of file
 
-        fseek(fileptr, 0, SEEK_SET);
-        out.chars = malloc(((out.length + 1) * sizeof(char)));
+        fseek(fileptr, 0, SEEK_SET); // go to start of file
+        out.chars = malloc(((out.length + 1) * sizeof(char))); // allocate memory for file
 
         if (out.chars) {
             fread(out.chars, sizeof(char), out.length, fileptr);
-            PrintString(out)
+            //PrintString(out)
         }
         *success = true;
         return out;
@@ -79,37 +80,91 @@ string TryReadFileToString(const char* path, bool* success) {
 }
 
 typedef enum {
-    Unknown,
-    Space,
-    NewLine,
-
+    Unknown = 0,
+    Digit = 1,
+    Space = 2,
+    NewLine = 3,
 } charType;
 
-void StringToIDLists(const string* string) {
-    const int length = string->length;
-    const char* chars = string->chars;
-
-
-
-    for (int i = 0; i > length; i++) {
-        const char c = chars[i];
-        if (CharIsDigit(c)) { // check if is digit
-            //lists[0]
+charType GetCharType(const char c) {
+    if (CharIsDigit(c)) { // check if is digit
+        return Digit;
+    }
+    switch (c) {
+        case ' ': {
+            return Space;
         }
-        else {
-            switch (c) {
-                case '\r': {
+        case '\r': {
+            return NewLine;
+        }
+        default: {
+            return Unknown;
+        }
+    }
+}
 
-                }
-                case '\n': {
+IDsList* StringToIDLists(const string* string) {
+    const int stringLength = string->length;
+    const char* stringChars = string->chars;
 
-                }
-                default: {
+    // gets ID size and List count
+    int IDSize = 0;
+    int lineLength = 0;
+    for (; lineLength < stringLength; lineLength++) {
+        const char c = stringChars[lineLength];
+        if (c == ' ') {
+            IDsListCount++;
+            lineLength += 2;
+        }
+        if (c == '\n') {
+            lineLength++;
+            IDSize = (lineLength - 5) / IDsListCount;
+            break;
+        }
+    }
+    const int IDCount = stringLength / lineLength;
 
+    // init lists
+    IDsList* IDsLists[IDsListCount];
+    for (int i = 0; i < IDsListCount; i++) {
+        IDsLists[i] = malloc(sizeof(char) + IDSize * IDCount * sizeof(int)); // allocate memory for lists
+        IDsLists[i]->length = IDCount;
+        IDsLists[i]->IDs[0] = 0;
+    }
+
+    int IDsListSelected = 0;
+    int IDSelected = 0;
+    // get id size and list count
+    for (int i = 0; i < stringLength; i++) {
+        const char c = stringChars[i];
+        const charType charType = GetCharType(c);
+        switch (charType) {
+            case Digit: { // add digit to current ID
+                int out = IDsLists[IDsListSelected]->IDs[IDSelected] * 10 + (c - 0x30);
+                IDsLists[IDsListSelected]->IDs[IDSelected] = out;
+                break;
+            }
+            case Space: { // go to next list
+                IDsListSelected++;
+                if (IDsListSelected >= IDsListCount) {
+                    IDsListSelected = 0;
                 }
+                i += 2; // skip 2
+                break;
+            }
+            case NewLine: { // go to next id, go to list 0
+                IDSelected++;
+                IDsListSelected = 0;
+                i++; // skip \n
+                break;
+            }
+            default: {
+                // skip
+                break;
             }
         }
     }
+    return IDsLists;
 }
 
 int main(int argc, char *argv[]) {
@@ -119,6 +174,7 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         bool success = false;
         fileContents = TryReadFileToString(argv[1], &success);
+        IDsList* foo = StringToIDLists(&fileContents);
     }
     else {
         printf("err: no args");
