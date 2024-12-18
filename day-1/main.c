@@ -103,7 +103,7 @@ charType GetCharType(const char c) {
     }
 }
 
-IDsList* StringToIDLists(const string* string) {
+void StringToIDLists(const string* string) {
     const int stringLength = string->length;
     const char* stringChars = string->chars;
 
@@ -125,7 +125,6 @@ IDsList* StringToIDLists(const string* string) {
     const int IDCount = stringLength / lineLength;
 
     // init lists
-    IDsList* IDsLists[IDsListCount];
     for (int i = 0; i < IDsListCount; i++) {
         IDsLists[i] = malloc(sizeof(char) + IDSize * IDCount * sizeof(int)); // allocate memory for lists
         IDsLists[i]->length = IDCount;
@@ -164,7 +163,6 @@ IDsList* StringToIDLists(const string* string) {
             }
         }
     }
-    return IDsLists;
 }
 
 int main(int argc, char *argv[]) {
@@ -174,7 +172,15 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         bool success = false;
         fileContents = TryReadFileToString(argv[1], &success);
-        IDsList* foo = StringToIDLists(&fileContents);
+        StringToIDLists(&fileContents);
+        for (int l = 0; l < IDsListCount; l++) {
+            printf("\nList: %i\n", l);
+            for (int i = 0; i < IDsLists[l]->length; ++i) {
+                printf("%i: %i, ", i, IDsLists[l]->IDs[i]);
+            }
+            m_printNewLine()
+        }
+
     }
     else {
         printf("err: no args");
@@ -200,11 +206,3 @@ int main(int argc, char *argv[]) {
     get pair diff
     get total diff
 */
-
-// 0th arg is file name
-
-// take arg of file location
-// open file
-// read numbers until first space
-// read numbers until new line
-// go to next index
