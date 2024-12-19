@@ -73,7 +73,9 @@ string TryReadFileToString(const char* path, bool* success) {
             fread(out.chars, sizeof(char), out.length, fileptr);
             //PrintString(out)
         }
+
         *success = true;
+        fclose(fileptr);
         return out;
     }
     return out;
@@ -175,7 +177,6 @@ int main(int argc, char *argv[]) {
         if (success) {
             StringToIDsLists(&fileContents); // convert string to id list
 
-
             for (int l = 0; l < IDsListCount; l++) {
                 printf("\nList: %i\n", l);
                 for (int i = 0; i < IDsLists[l]->length; ++i) {
@@ -188,7 +189,6 @@ int main(int argc, char *argv[]) {
             printf("Bad File");
             return -1;
         }
-
     }
     else {
         printf("err: no args");
